@@ -1,0 +1,23 @@
+# Environnements virtuels Python
+myvenv/
+venv/
+env/
+ENV/
+.venv/
+myvenv
+
+# Fichiers Python
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+.env
