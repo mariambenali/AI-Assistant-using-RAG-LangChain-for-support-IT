@@ -1,0 +1,13 @@
+langchain
+langchain-text-splitters
+torch
+langchain-community
+langchain-community pypdf
+sentence-transformers
+transformers
+accelerate
+chromadb
+python-dotenv
+
+
+
