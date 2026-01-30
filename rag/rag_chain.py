@@ -2,11 +2,13 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import chromadb
-from langchain.chains import RetrievalQA
+from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.prompts import PromptTemplate
 from langchain_community.llms import HuggingFacePipeline
 from transformers import pipeline
-
+from langchain_chroma import Chroma
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
 
 
 def indexation_pipeline_rag():
@@ -46,25 +48,20 @@ def indexation_pipeline_rag():
 
     return collection
 
-print(indexation_pipeline_rag())
+#print(indexation_pipeline_rag())
 
-    
- 
+
 
 def pipeline_rag(query:str):
 
     embeding_model = HuggingFaceEmbeddings(
                 model_name = "sentence-transformers/all-MiniLM-L6-v2"
             )  
-    
-    #embed the question
-    query = embeding_model.encode([query]).astype('float32')
-
 
     #reconnexion a ChromaDB
-    vectorstore=chromadb(
-        persist_directory = "rag/data/chroma_db",
-        collection_name = "documents",
+    vectorstore=Chroma(
+        persist_directory = "./chroma_db",
+        collection_name = "it_documents",
         embedding_function = embeding_model
     )
 
@@ -85,25 +82,35 @@ CONTEXTE:
 {context}
 
 QUESTION:
-{question}
+{input}
 
 RESPONSE
 """,    
-        input_variables =["context", "question"]
+        input_variables =["context", "input"]
     )
 
 
     #LLM GENERATIVE RESPONSE
     hf_pipeline = pipeline(
-        "text_generation",
-        model = "google/flan-t5-base"
-        
+        "text2text-generation",
+        model = "google/flan-t5-base",
+        max_new_tokens = 200
     )
+    llm = HuggingFacePipeline(pipeline = hf_pipeline)
+
+
+    # chain RAG
+    document_chain = create_stuff_documents_chain(llm, prompt)
+    qa_chain = create_retrieval_chain(retriever, document_chain)
+
+    result = qa_chain.invoke({"input": query})
+
+    return result["answer"]
 
 
 
+if  __name__ == "__main__":
 
-  
-    
-    
-
+    print("Question : What is Windows NT?")
+    response = pipeline_rag("what is Windows NT ?")
+    print(f"Réponse : {response}")
