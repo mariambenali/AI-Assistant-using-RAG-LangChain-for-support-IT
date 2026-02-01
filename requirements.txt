@@ -14,7 +14,7 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 passlib[bcrypt]
-
-
+python-jose
+email-validator
 
 
