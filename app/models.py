@@ -1,9 +1,10 @@
 from sqlalchemy import Column, String, Integer,Boolean, DateTime, ForeignKey
-from .database import Base
+from .database import Base, engine
 from datetime import datetime
 from sqlalchemy.orm import relationship
 
 
+Base.metadata.create_all(bind=engine)
 
 class User(Base):
     __tablename__ = "users"
@@ -22,7 +23,7 @@ class Query(Base):
     __tablename__ = "queries"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, foreign_key=("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     question = Column(String)
     answer = Column(String)

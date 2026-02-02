@@ -6,23 +6,24 @@ from datetime import datetime
 
 class UserCreate(BaseModel):
     email : EmailStr
-    password : str
+    password : str 
 
 
 class UserResponse(BaseModel):
-    id : int
     email : EmailStr
+    password : str
 
     class Config:
         orm_mode = True
 
 
-class Query(BaseModel):
+class QueryRequest(BaseModel):
     question : str
 
 
 class QueryResponse(BaseModel):
     answer : str
+    latency_ms: float
 
 
 class HistoryItem(BaseModel):
