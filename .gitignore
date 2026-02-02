@@ -23,4 +23,4 @@ __pycache__/
 .env
 
 
-#data
+app/__pycache__
