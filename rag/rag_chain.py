@@ -9,6 +9,8 @@ from transformers import pipeline
 from langchain_chroma import Chroma
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
+import joblib
+from ml.kmeans_utils import predict_cluster
 
 
 def indexation_pipeline_rag():
@@ -57,7 +59,7 @@ def pipeline_rag(query:str):
     embeding_model = HuggingFaceEmbeddings(
                 model_name = "sentence-transformers/all-MiniLM-L6-v2"
             )  
-
+    
     #reconnexion a ChromaDB
     vectorstore=Chroma(
         persist_directory = "./chroma_db",
@@ -65,11 +67,17 @@ def pipeline_rag(query:str):
         embedding_function = embeding_model
     )
 
+    #Predict cluster
+    cluster_id = predict_cluster(query)
+
     #retriever
     retriever = vectorstore.as_retriever(
-        search_type ="similarity",
-        search_kwargs ={"k": 3}
-    )
+    search_type="similarity",
+    search_kwargs={
+        "k": 3,
+        "filter": {"cluster_id": cluster_id}
+    }
+)
 
     #Prompt
     prompt = PromptTemplate(
