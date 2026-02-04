@@ -20,3 +20,4 @@ email-validator
 scikit-learn
 
 mlflow
+pytest
