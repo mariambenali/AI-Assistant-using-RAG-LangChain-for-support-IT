@@ -14,7 +14,7 @@ def predict_cluster(question: str) -> int:
     Take a question and return its cluster_id
     """
     embedding = st_model.encode([question])   
-    cluster_id = kmeans_model.predict(embedding)[0]
+    cluster_id = kmeans_model.predict(embedding)[0].item()
     return int(cluster_id)
 
 #predict_cluster("How to troubleshoot a network issue?")

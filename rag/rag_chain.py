@@ -1,8 +1,9 @@
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
+from sentence_transformers import SentenceTransformer
 import chromadb
-from langchain.chains.retrieval_qa.base import RetrievalQA
+#from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.prompts import PromptTemplate
 from langchain_community.llms import HuggingFacePipeline
 from transformers import pipeline
@@ -10,81 +11,51 @@ from langchain_chroma import Chroma
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 import joblib
-from ml.kmeans_utils import predict_cluster
+import numpy as np
+from ml.kmeans import predict_cluster
 
-
-def indexation_pipeline_rag():
-
-    #load data
-    loader = PyPDFLoader("/Users/miriambenali/Desktop/Project-Simplon/AI-Assistant-using-RAG-LangChain-for-support-IT/data/data-697729d43c37a040070748.pdf")
-    documents = loader.load()
-
-    #Chunk
-    splitter =RecursiveCharacterTextSplitter(
-    chunk_size= 500,
-    chunk_overlap= 50
-)
-    chunks = splitter.split_documents(documents) 
-
-    #embedding
-    embedding_model =HuggingFaceEmbeddings(
-                model_name = "sentence-transformers/all-MiniLM-L6-v2"
-            )  
-
-    # Texte des chunks
-    texts = [chunk.page_content for chunk in chunks]
-
-    # Génération des embeddings 
-    embeddings = embedding_model.embed_documents(texts) 
-
-
-    #vectorizationDB
-    client = chromadb.PersistentClient(path="./chroma_db")
-    collection = client.get_or_create_collection(name="it_documents")
-
-    collection.add(
-            documents=texts,
-            embeddings=embeddings,
-            ids=[f"chunk_{i}" for i in range(len(texts))]
-    )
-
-    return collection
-
-#print(indexation_pipeline_rag())
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 
-def pipeline_rag(query:str):
+# load model Kmeans
+kmeans_model = joblib.load("ml/kmeans_it_support.pkl")
+st_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-    embeding_model = HuggingFaceEmbeddings(
-                model_name = "sentence-transformers/all-MiniLM-L6-v2"
-            )  
     
-    #reconnexion a ChromaDB
-    vectorstore=Chroma(
-        persist_directory = "./chroma_db",
-        collection_name = "it_documents",
-        embedding_function = embeding_model
+
+def pipeline_rag(query: str):
+    # load model hugginfaceEmbedding
+    embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    
+    # Connect to chromaDb
+    vectorstore = Chroma(
+        persist_directory="./rag/data/chroma_db",
+        collection_name="it_documents",
+        embedding_function=embedding_model
     )
 
-    #Predict cluster
-    cluster_id = predict_cluster(query)
+    # the predict function 
+    cluster_id = predict_cluster(query) 
 
-    #retriever
+    # Retriever 
     retriever = vectorstore.as_retriever(
-    search_type="similarity",
-    search_kwargs={
-        "k": 3,
-        "filter": {"cluster_id": cluster_id}
-    }
-)
+        search_type="similarity",
+        search_kwargs={
+            "k": 3,
+            "filter": {"cluster_id": int(cluster_id)}
+        }
+    )
+
 
     #Prompt
     prompt = PromptTemplate(
         template = """
-Tu es un assistant IT.
-Réponds uniquement à partir du CONTEXTE ci-dessous.
-Si la réponse n’est pas dans le contexte, dis clairement : "Je ne sais pas".
+You are assistant IT.
+Answer the following IT question using only the context provided.
+If you don't know, say 'I don't know'.
 
 CONTEXTE:
 {context}
@@ -97,28 +68,18 @@ RESPONSE
         input_variables =["context", "input"]
     )
 
-
     #LLM GENERATIVE RESPONSE
     hf_pipeline = pipeline(
         "text2text-generation",
         model = "google/flan-t5-base",
         max_new_tokens = 200
     )
+    
+
     llm = HuggingFacePipeline(pipeline = hf_pipeline)
 
-
-    # chain RAG
     document_chain = create_stuff_documents_chain(llm, prompt)
     qa_chain = create_retrieval_chain(retriever, document_chain)
 
     result = qa_chain.invoke({"input": query})
-
     return result["answer"]
-
-
-
-if  __name__ == "__main__":
-
-    print("Question : What is Windows NT?")
-    response = pipeline_rag("what is Windows NT ?")
-    print(f"Réponse : {response}")
