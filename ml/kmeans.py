@@ -18,3 +18,9 @@ def predict_cluster(question: str) -> int:
     return int(cluster_id)
 
 #predict_cluster("How to troubleshoot a network issue?")
+
+
+
+
+
+   
