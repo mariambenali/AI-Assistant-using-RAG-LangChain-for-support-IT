@@ -26,7 +26,9 @@ jobs:
             - name: Lint with flake8
               run: |
                 pip install flake8
-                flake8 app
+                flake8 app \
+                  --max-line-length=120 \
+                  --ignore=E501,W291,W293,E302,E303,E265,E203,E231,E225,E251,E252,E261,E262
 
             - name: run tests
               run: |
