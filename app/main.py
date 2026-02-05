@@ -1,9 +1,9 @@
 from .models import User, Query
-from .schema import UserCreate, UserResponse, QueryRequest, QueryResponse, HistoryItem, HistoryResponse, HealthResponse
+from .schema import UserCreate, UserResponse, QueryRequest, QueryResponse
 from .security import hash_password, verify_password
 from .database import SessionLocal, engine, Base
 from rag.rag_chain import pipeline_rag
-from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from datetime import datetime
