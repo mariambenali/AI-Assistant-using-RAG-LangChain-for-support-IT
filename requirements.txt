@@ -20,4 +20,5 @@ email-validator
 scikit-learn
 
 mlflow
+flake8
 pytest
