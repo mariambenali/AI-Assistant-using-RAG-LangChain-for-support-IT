@@ -5,6 +5,7 @@ from .database import SessionLocal, engine, Base
 from rag.rag_chain import pipeline_rag
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from ml.kmeans import predict_cluster
 from sqlalchemy.orm import Session
 from datetime import datetime
 from jose import jwt
@@ -12,6 +13,7 @@ from dotenv import load_dotenv
 import os
 from fastapi import Body
 import time
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -23,6 +25,8 @@ app = FastAPI()
 
 security = HTTPBearer()
 
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -33,7 +37,7 @@ def get_db():
 
 @app.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    # Vérifier si l'utilisateur existe déjà
+    
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -41,7 +45,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     hash_pwd = hash_password(user.password)
     new_user = User(
         email=user.email,
-        hashedpassword=hash_pwd,  # ← Utilisez "hashedpassword" !
+        hashedpassword=hash_pwd, 
         isactive=True,
         created_at=datetime.utcnow()
     )
@@ -96,6 +100,8 @@ def query(payload:QueryRequest = Body(...), reccurent_user: User= Depends(verify
     
     start_time = time.time()
 
+    cluster_id = predict_cluster(payload.question)
+
     answer = pipeline_rag(payload.question)
 
     end_time = time.time()
@@ -107,6 +113,7 @@ def query(payload:QueryRequest = Body(...), reccurent_user: User= Depends(verify
         question=payload.question,
         answer= answer,
         latency_ms= latency,
+        cluster= cluster_id,
         created_at=datetime.utcnow()
     )
 
