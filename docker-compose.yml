@@ -3,27 +3,26 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: rag-backend
+    container_name: RAG-backend
     ports:
       - "8000:8000"
     volumes:
-      - ./:/code                    
-      - mlruns:/code/mlruns         
-      - artifacts:/code/artifacts   
+      - ./:/code
+      - mlruns:/code/mlruns
+      - artifacts:/code/artifacts
     environment:
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - PYTHONPATH=/code           
-      - PYTHONUNBUFFERED=1
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/it_assistant
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PYTHONPATH=/code
+      - PYTHONUNBUFFERED=1
     depends_on:
       db:
-        condition: service_healthy  
+        condition: service_healthy
       mlflow:
         condition: service_started
     networks:
       - mlflow-network
-    restart: on-failure             
+    restart: on-failure
 
   db:
     image: postgres:15
@@ -32,13 +31,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: it_assistant
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - mlflow-network
-    healthcheck:                    
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
