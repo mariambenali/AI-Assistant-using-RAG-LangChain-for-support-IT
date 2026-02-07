@@ -106,7 +106,7 @@ def query(payload:QueryRequest = Body(...), reccurent_user: User= Depends(verify
 
     end_time = time.time()
 
-    latency =(end_time-start_time)*1000 #ms
+    latency = (end_time - start_time) * 1000 #ms
 
     db_query= Query(
         user_id= reccurent_user.id,
@@ -127,7 +127,3 @@ def query(payload:QueryRequest = Body(...), reccurent_user: User= Depends(verify
         answer=answer,
         latency_ms= latency,
     )
-
-
-
-
